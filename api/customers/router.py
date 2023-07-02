@@ -25,11 +25,15 @@ async def get_customer(customer_id: int) -> Customer:
 
 
 @router.patch("/{customer_id}")
-async def update_customer(
-    customer_id: int, updated_customer: CustomerUpdateSchema
-) -> Customer:
-   pass
+async def update_customer(customer_id: int, updated_customer: CustomerUpdateSchema) -> Customer:
+    if customer_id not in CUSTOMERS_STORAGE:
+        raise HTTPException(status_code=404, detail=f"Customer with ID={customer_id} does not exist.")
 
+    customer = CUSTOMERS_STORAGE[customer_id]
+    updated_values = updated_customer.dict(exclude_unset=True)
+    customer.update_from_dict(updated_values)
+
+    return customer
 
 @router.delete("/{customer_id}")
 async def delete_customer(customer_id: int) -> None:
@@ -43,4 +47,7 @@ async def delete_customer(customer_id: int) -> None:
 
 @router.post("/")
 async def create_customer(customer: CustomerCreateSchema) -> Customer:
-   pass
+    index = len(CUSTOMERS_STORAGE)
+    CUSTOMERS_STORAGE[index] = Customer(id=index, **customer.dict())
+
+    return CUSTOMERS_STORAGE[index]
